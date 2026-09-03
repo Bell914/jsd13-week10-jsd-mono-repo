@@ -6,15 +6,22 @@ app.get("/users", (req, res) => {
   res.json(users);
 });
 
+// Read users
+app.get("/users", (req, res) => {
+  console.log(req);
+  res.json(users);
+});
+
 // Create user
 app.post("/users", (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
-    return res.json({
-      error: "username, email and password are required!",
-    });
   }
+
+  const highestId = users.reduce((max) => {}, 0);
+
+  const nextId = String(highestId + 1);
 });
 
 // Update user
