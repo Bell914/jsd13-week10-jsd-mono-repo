@@ -68,7 +68,23 @@ app.put("/users/:id", (req, res) => {
 });
 
 // Delete user
-app.delete("/users/:id", (req, res) => {});
+app.delete("/users/:id", (req, res) => {
+  const delIndex = req.params.id;
+
+  const index = users.findIndex((u) => delIndex === u.id);
+
+  // Validation ถ้าไม่เจอ user
+  if (index === -1) {
+    return res.status(404).json({
+      error: "User not found!",
+    });
+  }
+
+  // ลบ object ที่มี index 
+  users.splice(index, 1);
+
+  return res.status(200).json(users);
+});
 
 const PORT = 3001;
 
