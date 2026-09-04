@@ -32,9 +32,9 @@ router.post("/", (req, res, next) => {
 
     const newUser = {
       id: nextId,
-      username,
-      email,
-      password,
+      username: username,
+      email: email,
+      password: password,
     };
 
     users.push(newUser);
@@ -52,7 +52,7 @@ router.put("/:id", (req, res, next) => {
 
     if (!user) {
       return res.status(404).json({
-        error: "User not found!",
+        error: `User not found id: ${req.params.id}`,
       });
     }
 
@@ -77,11 +77,13 @@ router.put("/:id", (req, res, next) => {
 // Delete user
 router.delete("/:id", (req, res, next) => {
   try {
-    const index = users.findIndex((u) => u.id === req.params.id);
+    const index = users.findIndex(
+      (u) => u.id === req.params.id
+    );
 
     if (index === -1) {
       return res.status(404).json({
-        error: "User not found!",
+        error: `User not found id: ${req.params.id}`,
       });
     }
 
