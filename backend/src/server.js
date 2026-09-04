@@ -5,11 +5,11 @@ const app = express();
 
 app.use(express.json());
 
-// CRUD routes and endpoints
+// CRUD routes
 
 // Read users
 app.get("/users", (req, res) => {
-  console.log(req);
+  console.log(req.method, req.url);
   res.json(users);
 });
 
@@ -18,9 +18,9 @@ app.post("/users", (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
-    return res.status(400).json({
-      error: "username, email and password are required!",
-    });
+    return res
+      .status(400)
+      .json({ error: "username, email and password are required!" });
   }
 
   const highestId = users.reduce(
@@ -43,7 +43,29 @@ app.post("/users", (req, res) => {
 });
 
 // Update user
-app.put("/users/:id", (req, res) => {});
+app.put("/users/:id", (req, res) => {
+  const user = users.find((u) => u.id === req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      error: "User not found!",
+    });
+  }
+
+  const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res
+      .status(400)
+      .json({ error: "username, email and password are required!" });
+  }
+
+  user.username = username;
+  user.email = email;
+  user.password = password;
+
+  return res.status(200).json(user);
+});
 
 // Delete user
 app.delete("/users/:id", (req, res) => {});

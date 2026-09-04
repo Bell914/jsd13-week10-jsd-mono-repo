@@ -8,7 +8,17 @@ POST http://localhost:3001/users
 Content-Type: application/json
 
 {
-  "username": "Charlie",
-  "email": "charlie@example.com",
+  "username": "Charlie2",
+  "email": "charlie2@example.com",
+  "password": "pass123"
+}
+
+### Update a user
+PUT http://localhost:3001/users/1
+Content-Type: application/json
+
+{
+  "username": "Ittikorn",
+  "email": "Ittikorn@example.com",
   "password": "pass123"
 }
