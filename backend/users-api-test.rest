@@ -1,11 +1,11 @@
-### Read all users
+@baseUrl = http://localhost:3001/api/v1
 
-GET http://localhost:3001/api/v1/users
+### Read all users
+GET {{baseUrl}}/users
 
 
 ### Create a new user
-
-POST http://localhost:3001/users
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
@@ -16,8 +16,7 @@ Content-Type: application/json
 
 
 ### Update a user
-
-PUT http://localhost:3001/users/1
+PUT {{baseUrl}}/users/1
 Content-Type: application/json
 
 {
@@ -28,22 +27,15 @@ Content-Type: application/json
 
 
 ### Delete a user
-
-DELETE http://localhost:3001/users/1
-
-
-### Trigger centralize error handling middleware 1
-
-PUT http://localhost:3001/users/1
+DELETE {{baseUrl}}/users/1
 
 
-### Trigger centralize error handling middleware 2
-
-POST http://localhost:3001/users
+### Trigger 400 validation error (Missing body fields)
+PUT {{baseUrl}}/users/1
 Content-Type: application/json
 
-{
-  "username": "Charlie2",
-  "email": "charlie2@example.com",
-  "password": "pass123"
-}
+{}
+
+
+### Trigger 404 error (User not found)
+GET {{baseUrl}}/users/999

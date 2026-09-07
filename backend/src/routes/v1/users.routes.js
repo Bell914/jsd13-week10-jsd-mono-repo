@@ -3,32 +3,32 @@ import { users } from "../../fakeDB/fakeUsers.js";
 
 export const router = Router();
 
-// Read users
+// Read user
 router.get("/", (req, res, next) => {
   try {
-    return res.status(200).json(users);
+    res.send(users);
   } catch (err) {
     next(err);
   }
 });
 
-// Create user
+// Create users
 router.post("/", (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({
-        error: "username, email and password are required!",
-      });
+      return res
+        .status(400)
+        .json({ error: "username, email and password are required!" });
     }
 
-    const highestId = users.reduce(
+    const hightestId = users.reduce(
       (max, user) => Math.max(max, Number(user.id)),
-      0
+      0,
     );
 
-    const nextId = String(highestId + 1);
+    const nextId = String(hightestId + 1);
 
     const newUser = {
       id: nextId,
@@ -38,30 +38,27 @@ router.post("/", (req, res, next) => {
     };
 
     users.push(newUser);
-
     return res.status(201).json(newUser);
   } catch (err) {
     next(err);
   }
 });
 
-// Update user
+// Update users
 router.put("/:id", (req, res, next) => {
   try {
     const user = users.find((u) => u.id === req.params.id);
 
     if (!user) {
-      return res.status(404).json({
-        error: `User not found id: ${req.params.id}`,
-      });
+      return res.status(404).json({ error: "User not found!" });
     }
 
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({
-        error: "username, email and password are required!",
-      });
+      return res
+        .status(400)
+        .json({ error: "username, email and password are required!" });
     }
 
     user.username = username;
@@ -74,22 +71,27 @@ router.put("/:id", (req, res, next) => {
   }
 });
 
-// Delete user
+// Delete users
 router.delete("/:id", (req, res, next) => {
   try {
-    const index = users.findIndex(
-      (u) => u.id === req.params.id
-    );
+    const user = users.find((u) => u.id === req.params.id);
 
-    if (index === -1) {
-      return res.status(404).json({
-        error: `User not found id: ${req.params.id}`,
-      });
+    if (!user) {
+      return res.status(404).json({ error: "User not found!" });
     }
 
-    const [deleted] = users.splice(index, 1);
+    const index = users.indexOf(user);
+    users.splice(index, 1);
 
-    return res.status(200).json(deleted);
+    // const index = users.findIndex((u) => u.id === req.params.id);
+
+    // if (index === -1) {
+    //   return res.status(404).json({ error: "User not found!" });
+    // }
+
+    // users.splice(index, 1);
+
+    return res.status(204).send();
   } catch (err) {
     next(err);
   }
