@@ -1,10 +1,11 @@
-### Read all users
+@baseUrl = http://localhost:3001/api/v1
 
-GET http://localhost:3001/users
+### Read all users
+GET {{baseUrl}}/users
+
 
 ### Create a new user
-
-POST http://localhost:3001/users
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
@@ -13,8 +14,9 @@ Content-Type: application/json
   "password": "pass123"
 }
 
+
 ### Update a user
-PUT http://localhost:3001/users/1
+PUT {{baseUrl}}/users/1
 Content-Type: application/json
 
 {
@@ -22,3 +24,18 @@ Content-Type: application/json
   "email": "Ittikorn@example.com",
   "password": "pass123"
 }
+
+
+### Delete a user
+DELETE {{baseUrl}}/users/1
+
+
+### Trigger 400 validation error (Missing body fields)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{}
+
+
+### Trigger 404 error (User not found)
+GET {{baseUrl}}/users/999
