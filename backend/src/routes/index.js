@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { router as v1Routes } from "./v1/index.js";
+import { routes as v1Routes } from "./v1/index.js";
+import { routes as v2Routes } from "./v2/index.js";
 
-export const router = Router();
+export const routes = Router();
 
-router.use("/v1", v1Routes);
+routes.use("/v1", v1Routes);
+routes.use("/v2", v2Routes);
