@@ -1,30 +1,77 @@
 @baseUrl = http://localhost:3001/api/v2
 
-### Read all users
+
+# MongoDB Users CRUD (/api/v2/users)
+
+### Read all MongoDB users
 GET {{baseUrl}}/users
 
 
-### Create a new user
+### Read single MongoDB user
+GET {{baseUrl}}/users/ใส่_MONGODB_ID_ตรงนี้
+
+
+### Create a new MongoDB user
 POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
   "username": "Neeti",
-  "email": "neeti2@example.com",
-  "password": "pass1234"
+  "email": "neeti@example.com",
+  "password": "pass1234",
+  "role": "user"
 }
 
 
-### Update a user
-PUT {{baseUrl}}/users/USER_ID
+### Update a MongoDB user
+PUT {{baseUrl}}/users/ใส่_MONGODB_ID_ตรงนี้
 Content-Type: application/json
 
 {
-  "username": "Neeti12",
-  "email": "neeti@example.com",
-  "password": "pass1234"
+  "username": "Neeti Updated",
+  "email": "neeti.updated@example.com",
+  "role": "admin"
 }
 
 
-### Delete user
-DELETE {{baseUrl}}/users/USER_ID
+### Delete MongoDB user
+DELETE {{baseUrl}}/users/ใส่_MONGODB_ID_ตรงนี้
+
+
+
+# Supabase PostgreSQL CRUD (/api/v2/users/pg)
+
+
+### Read all Supabase users
+GET {{baseUrl}}/users/pg
+
+
+### Read single Supabase user
+GET {{baseUrl}}/users/pg/ใส่_UUID_ตรงนี้
+
+
+### Create a new Supabase user
+POST {{baseUrl}}/users/pg
+Content-Type: application/json
+
+{
+  "username": "NeetiPG",
+  "email": "neetipg@example.com",
+  "password": "pass1234",
+  "role": "user"
+}
+
+
+### Update a Supabase user
+PUT {{baseUrl}}/users/pg/ใส่_UUID_ตรงนี้
+Content-Type: application/json
+
+{
+  "username": "NeetiPG Updated",
+  "email": "neetipg.updated@example.com",
+  "role": "admin"
+}
+
+
+### Delete Supabase user
+DELETE {{baseUrl}}/users/pg/ใส่_UUID_ตรงนี้
