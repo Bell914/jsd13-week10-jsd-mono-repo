@@ -1,30 +1,32 @@
-@baseUrl = http://localhost:3001/api/v2
-
-### Read all users
-GET {{baseUrl}}/users
+@baseUrl = http://localhost:3001/api/v2/users
 
 
-### Create a new user
-POST {{baseUrl}}/users
+### GET users
+GET {{baseUrl}}
+
+
+### POST user
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
-  "username": "Neeti",
-  "email": "neeti2@example.com",
-  "password": "pass1234"
+  "username": "Ittikorn",
+  "email": "ittikorn@example.com",
+  "password": "pass123",
+  "role": "user"
 }
 
 
-### Update a user
-PUT {{baseUrl}}/users/USER_ID
+### PUT user
+PUT {{baseUrl}}/ใส่_MongoDB_ID_ตรงนี้
 Content-Type: application/json
 
 {
-  "username": "Neeti12",
-  "email": "neeti@example.com",
-  "password": "pass1234"
+  "username": "Ittikorn Updated",
+  "email": "ittikorn.updated@example.com",
+  "role": "admin"
 }
 
 
-### Delete user
-DELETE {{baseUrl}}/users/USER_ID
+### DELETE user
+DELETE {{baseUrl}}/ใส่_MongoDB_ID_ตรงนี้

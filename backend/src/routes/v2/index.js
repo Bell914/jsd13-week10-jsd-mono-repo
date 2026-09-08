@@ -4,5 +4,5 @@ import { router as usersSupabaseRoutes } from "./users.supabase.routes.js";
 
 export const router = Router();
 
-router.use("/users", usersRoutes);
 router.use("/users", usersSupabaseRoutes);
+router.use("/users", usersRoutes);
