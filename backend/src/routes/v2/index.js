@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { router as userRoutes } from "./users.routes.js";
+import { router as usersRoutes } from "./users.routes.js";
+import { router as usersSupabaseRoutes } from "./users.supabase.routes.js";
 
-export const routes = Router();
+export const router = Router();
 
-routes.use("/users", userRoutes);
+router.use("/users", usersRoutes);
+router.use("/users", usersSupabaseRoutes);

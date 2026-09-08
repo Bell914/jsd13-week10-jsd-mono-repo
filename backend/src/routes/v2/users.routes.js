@@ -34,27 +34,35 @@ router.post("/", async (req, res, next) => {
 // Update users
 router.put("/:id", async (req, res, next) => {
   try {
+    // เอา data เดิมจาก id
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
       return res
         .status(400)
-        .json({ error: "username, email and password are required" });
+        .json({ error: "username, email and password are required!" });
     }
 
+    // สร้าง username , email , password อันใหม่
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      { username, email, password },
-      { new: true, runValidators: true },
-    );
+      {
+        username,
+        email,
+        password,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-password");
 
+    // response ค่าใหม่กลับ username , email , password
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found!" });
     }
 
-    const { password: _password, ...userWithoutPassword } =
-      updatedUser.toObject();
-    return res.status(200).json(userWithoutPassword);
+    return res.status(200).json(updatedUser);
   } catch (err) {
     next(err);
   }
