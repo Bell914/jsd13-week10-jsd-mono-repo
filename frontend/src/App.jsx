@@ -143,7 +143,7 @@ function App() {
 
   useEffect(() => {
     resetForm();
-    loadUsers(activeDb);
+    (activeDb);
   }, [activeDb]);
 
   // =========================
@@ -664,7 +664,7 @@ function App() {
             </div>
 
             {/* USERS TABLE */}
-            <div className="overflow-x-auto min-h-[360px]">
+            <div className="overflow-x-auto min-h-90">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#efe7dc]/50 text-[11px] font-extrabold uppercase tracking-wider text-[#7a6f66]">
