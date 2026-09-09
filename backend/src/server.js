@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import { routes as apiRoutes } from "./routes/index.js";
+import { router as authRoutes } from "./routes/v2/auth.routes.js";
 import { connectDB } from "./config/db.js";
 import { connectSupabase } from "./config/supabase.js";
 
@@ -304,6 +305,8 @@ app.get("/", (req, res) => {
 
 // API ROUTES
 app.use("/api", apiRoutes);
+app.use(authRoutes);
+
 
 
 // ERROR HANDLING

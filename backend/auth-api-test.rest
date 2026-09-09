@@ -1,0 +1,82 @@
+@baseUrl = http://localhost:3001
+
+# ==========================================
+# 1. REGISTER (Password Security with bcrypt)
+# ==========================================
+
+### 1.1 Register - สมาชิกใหม่ (ตรงตามสไลด์ หน้า 7)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "kan@example.com",
+  "password": "password123"
+}
+
+### 1.2 Register - แบบระบุ username
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "mypassword123"
+}
+
+### 1.3 Register - ผ่าน API v2 Route (/api/v2/auth/register)
+POST {{baseUrl}}/api/v2/auth/register
+Content-Type: application/json
+
+{
+  "email": "mew@example.com",
+  "password": "ilovecats"
+}
+
+### 1.4 Register - ขาด email หรือ password (ควรได้ 400)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### 1.5 Register - สมัครซ้ำ (ควรได้ 409 Conflict)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "kan@example.com",
+  "password": "password123"
+}
+
+
+# ==========================================
+# 2. LOGIN (Verify Password with bcrypt.compare)
+# ==========================================
+
+### 2.1 Login - รหัสผ่านถูกต้อง (ตรงตามสไลด์ หน้า 8)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "kan@example.com",
+  "password": "password123"
+}
+
+### 2.2 Login - รหัสผ่านไม่ถูกต้อง (ควรได้ 401 Invalid credentials)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "kan@example.com",
+  "password": "wrongpassword"
+}
+
+### 2.3 Login - ไม่พบ Email ในระบบ (ควรได้ 401 Invalid credentials)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "nobody@example.com",
+  "password": "password123"
+}
