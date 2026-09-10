@@ -3,27 +3,26 @@ import { User } from "../../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { authUser } from "../../middlewares/authUser.js";
+import { requireAdmin } from "../../middlewares/authRole.js";
 
 export const router = Router();
 
-// Read users
+// Read all users (สไลด์หน้า 21: GET /users)
 router.get("/", async (req, res, next) => {
   try {
-    // 1. Get users data from database
-    const users = await User.find();
-    // 2. Send response object back to client
+    const users = await User.find().select("-password");
     return res.json(users);
   } catch (err) {
     next(err);
   }
 });
 
-// Create user
+// Create user (POST /users)
 router.post("/", async (req, res, next) => {
   try {
-    const { username, role, email, password } = req.body;
+    const { username, role = "user", email, password } = req.body;
 
-    if (!username || !role || !email || !password) {
+    if (!username || !email || !password) {
       return res
         .status(400)
         .json({ error: "username, email and password are required." });
@@ -46,7 +45,158 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-// Update user
+// GET /users/me (สไลด์หน้า 21: Get logged-in user profile from JWT)
+// รองรับทั้ง /me และ /auth เพื่อ backward compatibility
+router.get(["/me", "/auth"], authUser, async (req, res, next) => {
+  try {
+    const userId = req.user._id || req.user.user?._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /users/me (สไลด์หน้า 21: Update logged-in user's own details)
+router.patch("/me", authUser, async (req, res, next) => {
+  try {
+    const userId = req.user._id || req.user.user?._id;
+    const { username, email, password } = req.body;
+
+    const updateFields = {};
+    if (username) updateFields.username = username;
+    if (email) updateFields.email = email;
+    if (password) {
+      updateFields.password = await bcrypt.hash(password, 10);
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields provided to update",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateFields,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { password: _pw, ...userWithoutPassword } = updatedUser.toObject();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: userWithoutPassword,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /users/:userId/role (สไลด์หน้า 21: Admin change user role)
+router.patch("/:userId/role", authUser, requireAdmin, async (req, res, next) => {
+  try {
+    const { role } = req.body;
+
+    if (!role || !["user", "admin"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid role ('user' or 'admin') is required",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.userId,
+      { role },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /users/:userId (สไลด์หน้า 21: Admin update user details)
+router.patch("/:userId", authUser, requireAdmin, async (req, res, next) => {
+  try {
+    const { username, email, role, password } = req.body;
+
+    const updateFields = {};
+    if (username !== undefined) updateFields.username = username;
+    if (email !== undefined) updateFields.email = email;
+    if (role !== undefined) updateFields.role = role;
+    if (password !== undefined && password !== "") {
+      updateFields.password = await bcrypt.hash(password, 10);
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields provided to update",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.userId,
+      updateFields,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { password: _pw, ...userWithoutPassword } = updatedUser.toObject();
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: userWithoutPassword,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update user with PUT (for dashboard backward compatibility)
 router.put("/:id", async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
@@ -73,7 +223,7 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-// Delete user
+// Delete user (สไลด์หน้า 21: DELETE /users/:userId)
 router.delete("/:id", async (req, res, next) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
@@ -88,7 +238,7 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-// Login user
+// Login user (backward compatibility)
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -146,7 +296,7 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-// Logout user
+// Logout user (backward compatibility)
 router.post("/logout", (req, res) => {
   const isProd = process.env.NODE_ENV === "production";
 
@@ -161,30 +311,4 @@ router.post("/logout", (req, res) => {
     success: true,
     message: "Logout successful!",
   });
-});
-// Check user's token
-router.get("/auth", authUser, async (req, res, next) => {
-  try {
-    const userId = req.user.user._id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found!!!",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
 });

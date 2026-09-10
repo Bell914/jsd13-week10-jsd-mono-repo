@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import { routes as apiRoutes } from "./routes/index.js";
 import { router as authRoutes } from "./routes/v2/auth.routes.js";
@@ -9,8 +10,14 @@ import { connectSupabase } from "./config/supabase.js";
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 
 // HOME ROUTE
@@ -305,6 +312,7 @@ app.get("/", (req, res) => {
 
 // API ROUTES
 app.use("/api", apiRoutes);
+app.use("/auth", authRoutes);
 app.use(authRoutes);
 
 

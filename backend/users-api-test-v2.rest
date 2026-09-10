@@ -75,3 +75,66 @@ Content-Type: application/json
 
 ### Delete Supabase user
 DELETE {{baseUrl}}/users/pg/ใส่_UUID_ตรงนี้
+
+
+
+# ======================================================
+# Slide 21 Endpoints Specification (/auth & /users)
+# ======================================================
+
+### 1. Register a new user (POST /auth/signup)
+POST http://localhost:3001/auth/signup
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "email": "alice@example.com",
+  "password": "password123",
+  "role": "user"
+}
+
+
+### 2. Authenticate and issue JWT (POST /auth/login)
+POST http://localhost:3001/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "password123"
+}
+
+
+### 3. Get logged-in user profile from JWT (GET /users/me)
+GET {{baseUrl}}/users/me
+
+
+### 4. Update logged-in user's own details (PATCH /users/me)
+PATCH {{baseUrl}}/users/me
+Content-Type: application/json
+
+{
+  "username": "alice_updated"
+}
+
+
+### 5. Admin change user role (PATCH /users/:userId/role) - Requires Admin Cookie
+PATCH {{baseUrl}}/users/ใส่_USER_ID_ตรงนี้/role
+Content-Type: application/json
+
+{
+  "role": "admin"
+}
+
+
+### 6. Admin update user details (PATCH /users/:userId) - Requires Admin Cookie
+PATCH {{baseUrl}}/users/ใส่_USER_ID_ตรงนี้
+Content-Type: application/json
+
+{
+  "username": "alice_admin_edit",
+  "role": "admin"
+}
+
+
+### 7. Logout (POST /auth/logout)
+POST http://localhost:3001/auth/logout
