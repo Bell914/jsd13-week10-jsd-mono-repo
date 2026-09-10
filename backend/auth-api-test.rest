@@ -4,7 +4,7 @@
 # 1. REGISTER (Password Security with bcrypt)
 # ==========================================
 
-### 1.1 Register - สมาชิกใหม่ (ตรงตามสไลด์ หน้า 7)
+### 1.1 Register - สมาชิกใหม่
 POST {{baseUrl}}/register
 Content-Type: application/json
 
@@ -54,7 +54,7 @@ Content-Type: application/json
 # 2. LOGIN (Verify Password with bcrypt.compare)
 # ==========================================
 
-### 2.1 Login - รหัสผ่านถูกต้อง (ตรงตามสไลด์ หน้า 8)
+### 2.1 Login - รหัสผ่านถูกต้อง
 POST {{baseUrl}}/login
 Content-Type: application/json
 
