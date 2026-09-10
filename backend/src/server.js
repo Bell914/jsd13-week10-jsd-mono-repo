@@ -9,13 +9,21 @@ import { connectSupabase } from "./config/supabase.js";
 
 const app = express();
 
-// Middleware
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
+// Middleware (สไลด์หน้า 57: CORS Options)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "https://jsd-app.vercel.app",
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
+
+const corsOptions = {
+  origin: allowedOrigins, // frontend domain
+  credentials: true, // allow cookies to be sent
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
