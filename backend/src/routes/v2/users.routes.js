@@ -1,5 +1,6 @@
 import { Router } from "express";
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 import { User } from "../../models/user.model.js";
 
 export const router = Router();
@@ -52,50 +53,30 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-// CREATE USER
-// POST /api/v2/users
+// Create user
 router.post("/", async (req, res, next) => {
   try {
-    const {
-      username,
-      email,
-      password,
-      role = "user",
-    } = req.body;
+    const { username, role, email, password } = req.body;
 
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "username, email and password are required",
-      });
+    if (!username || !role || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: "username, role, email and password are required." });
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
-    });
-
-    if (existingUser) {
-      const field = existingUser.email === email ? "Email" : "Username";
-      return res.status(409).json({
-        success: false,
-        message: `${field} already exists`,
-      });
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
       username,
-      email,
-      password,
       role,
+      email,
+      password: hashedPassword,
     });
 
-    const user = await User.findById(newUser._id).select(USER_SELECT);
+    const { password: _password, ...userWithoutPassword } =
+      newUser.toObject();
 
-    return res.status(201).json({
-      success: true,
-      message: "User created successfully",
-      data: user,
-    });
+    return res.status(201).json(userWithoutPassword);
   } catch (err) {
     next(err);
   }
