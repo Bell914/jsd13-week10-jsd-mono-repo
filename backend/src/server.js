@@ -9,7 +9,7 @@ import { connectSupabase } from "./config/supabase.js";
 
 const app = express();
 
-// Middleware (สไลด์หน้า 57: CORS Options)
+// Middleware (CORS Options)
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
