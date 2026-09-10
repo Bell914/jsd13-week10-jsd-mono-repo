@@ -1,15 +1,31 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import { routes as apiRoutes } from "./routes/index.js";
+import { router as authRoutes } from "./routes/v2/auth.routes.js";
 import { connectDB } from "./config/db.js";
 import { connectSupabase } from "./config/supabase.js";
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Middleware (CORS Options)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "https://jsd-app.vercel.app",
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
+
+const corsOptions = {
+  origin: allowedOrigins, // frontend domain
+  credentials: true, // allow cookies to be sent
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
 
 // HOME ROUTE
@@ -304,6 +320,9 @@ app.get("/", (req, res) => {
 
 // API ROUTES
 app.use("/api", apiRoutes);
+app.use("/auth", authRoutes);
+app.use(authRoutes);
+
 
 
 // ERROR HANDLING

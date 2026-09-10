@@ -1,4 +1,5 @@
 import { Router } from "express";
+import bcrypt from "bcrypt";
 import { supabase } from "../../config/supabase.js";
 
 export const router = Router();
@@ -96,12 +97,14 @@ router.post("/pg", async (req, res, next) => {
       });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const { data, error } = await supabase
       .from("users")
       .insert({
         username,
         email,
-        password,
+        password: hashedPassword,
         role,
       })
       .select(PG_SELECT)
@@ -138,7 +141,9 @@ router.put("/pg/:id", async (req, res, next) => {
 
     if (username !== undefined) updateData.username = username;
     if (email !== undefined) updateData.email = email;
-    if (password !== undefined && password !== "") updateData.password = password;
+    if (password !== undefined && password !== "") {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
     if (role !== undefined) updateData.role = role;
 
     // Check if any actual field other than updated_at was supplied

@@ -1,215 +1,48 @@
 import { Router } from "express";
-import mongoose from "mongoose";
-import { User } from "../../models/user.model.js";
+import {
+  getAllUsers,
+  getCurrentUser,
+  updateCurrentUser,
+  updateUserRole,
+  updateUserById,
+  deleteUserById,
+  createUser,
+} from "../../controllers/users.controller.js";
+import { loginUser, logoutUser } from "../../controllers/auth.controller.js";
+import { authUser } from "../../middlewares/authUser.js";
+import { requireAdmin } from "../../middlewares/authRole.js";
 
 export const router = Router();
 
-const USER_SELECT = "-password";
+/**
+ * Users Routes
+ * สถาปัตยกรรม: Route -> Middleware -> Controller
+ */
 
-// GET USERS
-// GET /api/v2/users
-router.get("/", async (req, res, next) => {
-  try {
-    const users = await User.find()
-      .select(USER_SELECT)
-      .sort({ createdAt: -1 });
+// GET /users (getAllUsers)
+router.get("/", getAllUsers);
 
-    return res.status(200).json({
-      success: true,
-      data: users,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+// POST /users (createUser)
+router.post("/", createUser);
 
-// GET USER BY ID
-// GET /api/v2/users/:id
-router.get("/:id", async (req, res, next) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    }
+// GET /users/me (getCurrentUser)
+router.get(["/me", "/auth"], authUser, getCurrentUser);
 
-    const user = await User.findById(req.params.id).select(USER_SELECT);
+// PATCH /users/me (updateCurrentUser)
+router.patch("/me", authUser, updateCurrentUser);
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+// PATCH /users/:userId/role (updateUserRole - Admin Only)
+router.patch("/:userId/role", authUser, requireAdmin, updateUserRole);
 
-    return res.status(200).json({
-      success: true,
-      data: user,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+// PATCH /users/:userId (updateUserById - Admin Only)
+router.patch("/:userId", authUser, requireAdmin, updateUserById);
 
-// CREATE USER
-// POST /api/v2/users
-router.post("/", async (req, res, next) => {
-  try {
-    const {
-      username,
-      email,
-      password,
-      role = "user",
-    } = req.body;
+// PUT /users/:id (updateUserById - รองรับ Dashboard เดิม)
+router.put("/:id", updateUserById);
 
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "username, email and password are required",
-      });
-    }
+// DELETE /users/:userId (deleteUserById)
+router.delete(["/:userId", "/:id"], deleteUserById);
 
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
-    });
-
-    if (existingUser) {
-      const field = existingUser.email === email ? "Email" : "Username";
-      return res.status(409).json({
-        success: false,
-        message: `${field} already exists`,
-      });
-    }
-
-    const newUser = await User.create({
-      username,
-      email,
-      password,
-      role,
-    });
-
-    const user = await User.findById(newUser._id).select(USER_SELECT);
-
-    return res.status(201).json({
-      success: true,
-      message: "User created successfully",
-      data: user,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// UPDATE USER
-// PUT /api/v2/users/:id
-router.put("/:id", async (req, res, next) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    }
-
-    const { username, email, password, role } = req.body;
-
-    const updateData = {};
-
-    if (username !== undefined) {
-      updateData.username = username;
-    }
-
-    if (email !== undefined) {
-      updateData.email = email;
-    }
-
-    if (password !== undefined && password !== "") {
-      updateData.password = password;
-    }
-
-    if (role !== undefined) {
-      updateData.role = role;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No data provided for update",
-      });
-    }
-
-    // Check for duplicate username or email if they are being updated
-    const conflictConditions = [];
-    if (updateData.username) conflictConditions.push({ username: updateData.username });
-    if (updateData.email) conflictConditions.push({ email: updateData.email });
-
-    if (conflictConditions.length > 0) {
-      const conflictUser = await User.findOne({
-        _id: { $ne: req.params.id },
-        $or: conflictConditions,
-      });
-
-      if (conflictUser) {
-        const field = conflictUser.email === updateData.email ? "Email" : "Username";
-        return res.status(409).json({
-          success: false,
-          message: `${field} already exists`,
-        });
-      }
-    }
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).select(USER_SELECT);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "User updated successfully",
-      data: user,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// DELETE USER
-// DELETE /api/v2/users/:id
-router.delete("/:id", async (req, res, next) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    }
-
-    const user = await User.findByIdAndDelete(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "User deleted successfully",
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+// Login & Logout helpers (backward compatibility)
+router.post("/login", loginUser);
+router.post("/logout", logoutUser);
