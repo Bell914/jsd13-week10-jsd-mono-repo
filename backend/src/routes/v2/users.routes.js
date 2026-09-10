@@ -1,53 +1,18 @@
 import { Router } from "express";
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
 import { User } from "../../models/user.model.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { authUser } from "../../middlewares/authUser.js";
 
 export const router = Router();
 
-const USER_SELECT = "-password";
-
-// GET USERS
-// GET /api/v2/users
+// Read users
 router.get("/", async (req, res, next) => {
   try {
-    const users = await User.find()
-      .select(USER_SELECT)
-      .sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      data: users,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET USER BY ID
-// GET /api/v2/users/:id
-router.get("/:id", async (req, res, next) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    }
-
-    const user = await User.findById(req.params.id).select(USER_SELECT);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: user,
-    });
+    // 1. Get users data from database
+    const users = await User.find();
+    // 2. Send response object back to client
+    return res.json(users);
   } catch (err) {
     next(err);
   }
@@ -61,7 +26,7 @@ router.post("/", async (req, res, next) => {
     if (!username || !role || !email || !password) {
       return res
         .status(400)
-        .json({ error: "username, role, email and password are required." });
+        .json({ error: "username, email and password are required." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -73,8 +38,7 @@ router.post("/", async (req, res, next) => {
       password: hashedPassword,
     });
 
-    const { password: _password, ...userWithoutPassword } =
-      newUser.toObject();
+    const { password: _password, ...userWithoutPassword } = newUser.toObject();
 
     return res.status(201).json(userWithoutPassword);
   } catch (err) {
@@ -82,113 +46,143 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-// UPDATE USER
-// PUT /api/v2/users/:id
+// Update user
 router.put("/:id", async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: "username, email and password are required!" });
     }
 
-    const { username, email, password, role } = req.body;
-
-    const updateData = {};
-
-    if (username !== undefined) {
-      updateData.username = username;
-    }
-
-    if (email !== undefined) {
-      updateData.email = email;
-    }
-
-    if (password !== undefined && password !== "") {
-      updateData.password = password;
-    }
-
-    if (role !== undefined) {
-      updateData.role = role;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No data provided for update",
-      });
-    }
-
-    // Check for duplicate username or email if they are being updated
-    const conflictConditions = [];
-    if (updateData.username) conflictConditions.push({ username: updateData.username });
-    if (updateData.email) conflictConditions.push({ email: updateData.email });
-
-    if (conflictConditions.length > 0) {
-      const conflictUser = await User.findOne({
-        _id: { $ne: req.params.id },
-        $or: conflictConditions,
-      });
-
-      if (conflictUser) {
-        const field = conflictUser.email === updateData.email ? "Email" : "Username";
-        return res.status(409).json({
-          success: false,
-          message: `${field} already exists`,
-        });
-      }
-    }
-
-    const user = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      updateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).select(USER_SELECT);
+      { username, email, password },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+
+    return res.status(200).json(updatedUser);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete user
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    if (!deletedUser) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+
+    return res.json(deletedUser);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Login user
+router.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email and Password are required!" });
+    }
+
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found!" });
     }
+
+    const isMatched = await bcrypt.compare(password, user.password);
+
+    if (!isMatched) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect password!" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const isProd = process.env.NODE_ENV === "production";
+
+    res.cookie("accessToken", token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      path: "/",
+      maxAge: 60 * 60 * 1000,
+    });
 
     return res.status(200).json({
       success: true,
-      message: "User updated successfully",
-      data: user,
+      message: "Login successful!",
+      user: {
+        _id: user._id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+      },
     });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE USER
-// DELETE /api/v2/users/:id
-router.delete("/:id", async (req, res, next) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    }
+// Logout user
+router.post("/logout", (req, res) => {
+  const isProd = process.env.NODE_ENV === "production";
 
-    const user = await User.findByIdAndDelete(req.params.id);
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    path: "/",
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Logout successful!",
+  });
+});
+// Check user's token
+router.get("/auth", authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.user._id;
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(401).json({
         success: false,
-        message: "User not found",
+        message: "User not found!!!",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "User deleted successfully",
+      data: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (err) {
     next(err);
